@@ -1,0 +1,71 @@
+!pip install spotipy
+!pip install pandas
+
+import spotipy
+from spotipy.oauth2 import SpotifyClientCredentials
+import pandas as pd
+
+client_id = ENV['BASIC_CLIENT_ID']
+client_secret = ENV['BASIC_SECRET_ID']
+
+client_credentials_manager = SpotifyClientCredentials(client_id=client_id, client_secret=client_secret)
+sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
+
+# Define a function to retrieve all the tracks in a playlist
+def get_playlist_tracks(playlist_id):
+    results = sp.playlist_tracks(playlist_id)
+    tracks = results['items']
+    while results['next']:
+        results = sp.next(results)
+        tracks.extend(results['items'])
+    return tracks
+
+# Create a DataFrame to store the track information
+track_info = pd.DataFrame(columns=['id', 'name', 'artist', 'album', 'release_date', 'danceability', 'energy', 'key', 'loudness', 'mode', 
+                                   'speechiness', 'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo'])
+  
+# Retrieve all the tracks in popular playlist
+playlist = sp.featured_playlists(country='US')
+for item in playlist['playlists']['items']:
+  tracks = get_playlist_tracks(item['id'])
+
+
+# Loop through each track and retrieve its information
+  for track in tracks:
+      track_id = track['track']['id']
+      track_name = track['track']['name']
+      track_artist = track['track']['artists'][0]['name']
+      track_album = track['track']['album']['name']
+      track_release_date = track['track']['album']['release_date']
+
+      audio_features = sp.audio_features(track_id)[0] # Retrieve audio features for the track
+      
+      track_info = track_info.append({'id': track_id, 
+                                      'name': track_name, 
+                                      'artist': track_artist, 
+                                      'album': track_album, 
+                                      'release_date': track_release_date,
+                                      'danceability': audio_features['danceability'],
+                                      'energy': audio_features['energy'],
+                                      'key': audio_features['key'],
+                                      'loudness': audio_features['loudness'],
+                                      'mode': audio_features['mode'],
+                                      'speechiness': audio_features['speechiness'],
+                                      'acousticness': audio_features['acousticness'],
+                                      'instrumentalness': audio_features['instrumentalness'],
+                                      'liveness': audio_features['liveness'],
+                                      'valence': audio_features['valence'],
+                                      'tempo': audio_features['tempo'],
+                                    }, 
+                                    ignore_index=True)
+    
+# Print the first few rows of the DataFrame
+print(track_info.head())
+    
+
+
+
+#results = sp.search(q='track:More Than a Woman artist:Bee Gees', type='track')
+#track1 = results['tracks']['items'][0]['id']
+#print(track1)
+#print(sp.audio_features(track1))
