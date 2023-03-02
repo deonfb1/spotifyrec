@@ -61,6 +61,22 @@ for item in playlist['playlists']['items']:
     
 # Print the first few rows of the DataFrame
 print(track_info.head())
+
+#Cosine similarity matrix    
+audio_featuresdf = track_info.drop(['id', 'name', 'artist', 'album', 'release_date'], axis=1)
+audio_features = np.array(list(audio_featuresdf.values))
+audio_similarity_matrix = cosine_similarity(audio_features)
+
+#Defines function "songrec" that takes a song as an input and returns a specified number of recommended songs
+def songrec(song_name, n=5):
+    #Finds the row in the track_info DataFrame that matches the song
+    song_index = track_info[track_info['name']==song_name].index.values[0]
+    
+    #Finds most similar songs; sorts similarity values in descending order
+    similar_songs_indexes = np.argsort(audio_similarity_matrix[song_index])[::-1][1:n+1]
+    return track_info.iloc[similar_songs_indexes]['name'].values
+
+#print(songrec(''))
     
 
 
